@@ -1,0 +1,8 @@
+node_modules
+dist
+data/*.sqlite
+*.log
+server/.env
+client/.env
+coverage
+.env
