@@ -66,6 +66,22 @@ export const assertReservationRequest = (
     errors.push('startTime must be before endTime');
   }
 
+  // Validate age is 18+
+  if (input.dob) {
+    const dob = new Date(input.dob);
+    if (!Number.isNaN(dob.valueOf())) {
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+        age--;
+      }
+      if (age < 18) {
+        errors.push('User must be at least 18 years old');
+      }
+    }
+  }
+
   if (errors.length > 0) {
     const err = new Error(errors.join(', '));
     err.name = 'ValidationError';
