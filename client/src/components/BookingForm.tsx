@@ -36,6 +36,7 @@ const BookingForm = ({ initialSlot, onSuccess }: BookingFormProps) => {
   const [result, setResult] = useState<ReservationResponse | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ startTime?: string; endTime?: string; dob?: string }>({});
   const [modalMessage, setModalMessage] = useState<string | null>(null);
+  const [modalTitle, setModalTitle] = useState<string>('Update Your Times');
 
   const handleChange = (field: keyof ReservationRequest) => (value: string) => {
     if (field === 'paymentMethod' && (value === 'paypal' || value === 'clover')) {
@@ -58,6 +59,7 @@ const BookingForm = ({ initialSlot, onSuccess }: BookingFormProps) => {
     setError(null);
     setFieldErrors({});
     setModalMessage(null);
+    setModalTitle('Update Your Times');
 
     const now = dayjs();
     const start = dayjs(form.startTime);
@@ -83,10 +85,15 @@ const BookingForm = ({ initialSlot, onSuccess }: BookingFormProps) => {
     if (form.dob) {
       const dob = dayjs(form.dob);
       if (dob.isValid()) {
-        const age = now.diff(dob, 'year');
+        // Calculate age accounting for whether birthday has occurred this year
+        let age = now.year() - dob.year();
+        if (now.month() < dob.month() || (now.month() === dob.month() && now.date() < dob.date())) {
+          age--;
+        }
         if (age < 18) {
           newFieldErrors.dob = 'You must be at least 18 years old to make a reservation.';
           hasError = true;
+          setModalTitle('Age Requirement Not Met');
           setModalMessage('You must be at least 18 years old to make a reservation.');
         }
       }
@@ -246,7 +253,7 @@ const BookingForm = ({ initialSlot, onSuccess }: BookingFormProps) => {
         {modalMessage && (
           <div className="modal-overlay" role="alert">
             <div className="modal-card">
-              <h3>Update Your Times</h3>
+              <h3>{modalTitle}</h3>
               <p>{modalMessage}</p>
               <button type="button" className="btn" onClick={() => setModalMessage(null)}>
                 Got it
