@@ -34,7 +34,7 @@ const BookingForm = ({ initialSlot, onSuccess }: BookingFormProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ReservationResponse | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ startTime?: string; endTime?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ startTime?: string; endTime?: string; dob?: string }>({});
   const [modalMessage, setModalMessage] = useState<string | null>(null);
 
   const handleChange = (field: keyof ReservationRequest) => (value: string) => {
@@ -63,7 +63,7 @@ const BookingForm = ({ initialSlot, onSuccess }: BookingFormProps) => {
     const start = dayjs(form.startTime);
     const end = dayjs(form.endTime);
 
-    const newFieldErrors: { startTime?: string; endTime?: string } = {};
+    const newFieldErrors: { startTime?: string; endTime?: string; dob?: string } = {};
     let hasError = false;
 
     if (!form.startTime || !start.isValid() || start.isBefore(now)) {
@@ -79,10 +79,25 @@ const BookingForm = ({ initialSlot, onSuccess }: BookingFormProps) => {
       hasError = true;
     }
 
+    // Validate age is 18+
+    if (form.dob) {
+      const dob = dayjs(form.dob);
+      if (dob.isValid()) {
+        const age = now.diff(dob, 'year');
+        if (age < 18) {
+          newFieldErrors.dob = 'You must be at least 18 years old to make a reservation.';
+          hasError = true;
+          setModalMessage('You must be at least 18 years old to make a reservation.');
+        }
+      }
+    }
+
     if (hasError) {
       setFieldErrors(newFieldErrors);
       setLoading(false);
-      setModalMessage('Please pick a start and end time that are after the current time.');
+      if (!newFieldErrors.dob) {
+        setModalMessage('Please pick a start and end time that are after the current time.');
+      }
       return;
     }
 
@@ -165,7 +180,7 @@ const BookingForm = ({ initialSlot, onSuccess }: BookingFormProps) => {
               onChange={(event) => handleChange('phone')(event.target.value)}
             />
           </label>
-          <label>
+          <label className={fieldErrors.dob ? 'field-error' : undefined}>
             Date of Birth
             <input
               required
@@ -173,6 +188,7 @@ const BookingForm = ({ initialSlot, onSuccess }: BookingFormProps) => {
               value={form.dob}
               onChange={(event) => handleChange('dob')(event.target.value)}
             />
+            {fieldErrors.dob && <span className="field-error__message">{fieldErrors.dob}</span>}
           </label>
           <label>
             Sport
